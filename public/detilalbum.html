@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Album | Sync</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="detail-container">
+
+    <a href="index.html" class="btn-back">
+        ← Dashboard
+    </a>
+
+    <div class="album-hero">
+        <div class="album-cover">
+            
+            <img id="albumCover" src="" alt="Album Cover">
+        </div>
+
+        <div class="album-detail">
+            <span class="album-type">
+                Album
+            </span>
+            <h1 id="albumName">
+                Memuat..
+            </h1>
+            <p id="albumArtist">
+            </p>
+            <p id="albumInfo">
+                memuat informasi...
+            </p>
+            <button class="playlist-btn" onclick="addAlbumToPlaylist()">
+                + Add all to playlist
+            </button>
+        </div>
+    </div>
+
+    <div class="playlist-header">
+        <span>#</span>
+        <span>Track</span>
+        <span></span>
+    </div>
+
+    <div class="songs-list" id="trackList">
+        <p>Memuat tracklist.....</p>
+    </div>
+
+</div>
+
+<script src="detilalbum.js"></script>
+</body>
+</html>

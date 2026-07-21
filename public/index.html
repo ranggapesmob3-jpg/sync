@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync - Music Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="wrapper">
+    <header class="page-header">
+        <div class="header-left">
+            <h1>Sync Dashboard</h1>
+            <p class="subtitle">Discover music, explore albums, and build your own playlists.</p>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search your favorite artist...">
+            <button onclick="searchAll()">Search</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <div class="section-header">
+                <div>
+                    <h2>Top Tracks</h2>
+                    <span>Most played songs</span>
+                </div>
+            </div>
+            <div id="tracksList"></div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <div>
+                    <h2>Top Albums</h2>
+                    <span>Popular albums</span>
+                </div>
+            </div>
+            <div id="albumsList"></div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <div>
+                    <h2>My Playlists</h2>
+                    <span>Your personal collection</span>
+                </div>
+            </div>
+            <input type="text" id="playlistSearch" class="playlist-input" placeholder="Find your playlist..." onkeyup="filterPlaylists()">
+            <div id="playlistsContainer"></div>
+        </section>
+    </main>
+
+    <script>
+        let lastPlaylistName = "";
+
+        window.onload = async () => {
+            loadPlaylists(); 
+            searchTracks("Adele");
+            searchAlbums("Adele");
+        };
+
+        async function searchAll() {
+            const query = document.getElementById("searchInput").value.trim();
+            if (!query) { alert("Masukkan nama artis."); return; }
+            searchTracks(query);
+            searchAlbums(query);
+        }
+
+        async function searchTracks(artist) {
+            const res = await fetch(`/search?q=${encodeURIComponent(artist)}`);
+            const tracks = await res.json();
+            const container = document.getElementById("tracksList");
+            
+            if (tracks.length === 0) {
+                container.innerHTML = `<p class="empty-state">Tidak ada lagu ditemukan.</p>`;
+                return;
+            }
+
+            let html = "";
+            tracks.forEach(t => {
+                html += `
+                <div class="item">
+                    <img src="${t.image || 'https://ui-avatars.com/api/?name=Cover'}" alt="Cover">
+                    <div class="item-info">
+                        <strong>${t.title}</strong>
+                        <small>${t.artist}</small>
+                    </div>
+                    <button class="add-btn" onclick="event.stopPropagation(); addTrackToPlaylist('${t.title.replace(/'/g,"\\'")}')">+</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function searchAlbums(artist) {
+            const res = await fetch(`/albums?q=${encodeURIComponent(artist)}`);
+            const albums = await res.json();
+            const container = document.getElementById("albumsList");
+            
+            if (albums.length === 0) {
+                container.innerHTML = `<p class="empty-state">Tidak ada album ditemukan.</p>`;
+                return;
+            }
+
+            let html = "";
+            albums.forEach(a => {
+                html += `
+                <div class="item album-item" onclick="window.location.href='/detilalbum.html?name=${encodeURIComponent(a.title)}&artist=${encodeURIComponent(a.artist)}'">
+                    <img src="${a.image || 'https://ui-avatars.com/api/?name=Cover'}">
+                    <div class="item-info">
+                        <strong>${a.title}</strong>
+                        <small>${a.artist}</small>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function loadPlaylists() {
+            const res = await fetch('/my-playlists');
+            const playlists = await res.json();
+            const container = document.getElementById("playlistsContainer");
+            
+            if (playlists.length === 0) {
+                container.innerHTML = `<div class="empty-state">Belum ada playlist.</div>`;
+                return;
+            }
+
+            let html = "";
+            playlists.forEach(p => {
+                html += `
+                <div class="playlist-card">
+                    <div class="playlist-info">
+                        <a class="playlist-link" href="/detilplaylist.html?id=${p.id}">${p.title}</a>
+                        <small>${p.songs.length} Lagu</small>
+                    </div>
+                    <button class="delete-btn" onclick="deletePlaylist(${p.id})">Hapus</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function addTrackToPlaylist(songTitle, forceAdd = false) {
+            if (!forceAdd) {
+                lastPlaylistName = prompt("Masukkan nama playlist:");
+            }
+            
+            if (!lastPlaylistName) return;
+
+            const res = await fetch("/playlist/add-song", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: lastPlaylistName, song: songTitle, forceAdd: forceAdd })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                if (data.isDuplicate && !forceAdd) {
+                    if (confirm("Lagu ini sudah ada di playlist. Tambahkan lagi?")) {
+                        addTrackToPlaylist(songTitle, true);
+                    }
+                } else {
+                    alert("Lagu berhasil ditambahkan!");
+                    loadPlaylists();
+                }
+            } else {
+                alert("Gagal simpan");
+            }
+        }
+
+        async function deletePlaylist(id) {
+            if (!confirm("Yakin ingin menghapus playlist ini?")) return;
+            const res = await fetch(`/playlist/${id}`, { method: "DELETE" });
+            if (res.ok) loadPlaylists();
+        }
+
+        function filterPlaylists() {
+            const keyword = document.getElementById("playlistSearch").value.toLowerCase();
+            const cards = document.querySelectorAll(".playlist-card");
+            cards.forEach(card => {
+                const title = card.querySelector(".playlist-link").textContent.toLowerCase();
+                card.style.display = title.includes(keyword) ? "flex" : "none";
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

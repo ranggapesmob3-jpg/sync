@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Playlist | Sync</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="detail-container">
+
+    <a href="index.html" class="btn-back">
+        Kembali ke Dashboard
+    </a>
+
+    <div class="header-hero">
+        <div class="hero-info">
+            <span class="hero-tag">PLAYLIST</span>
+            <h1 id="pTitle">Memuat...</h1>
+            <p id="pCount">0 Lagu</p>
+        </div>
+    </div>
+
+    <div class="playlist-header">
+        <span>#</span>
+        <span>Judul Lagu</span>
+        <span></span>
+    </div>
+
+    <div class="songs-list" id="pSongs">
+        <p>Memuat daftar lagu...</p>
+    </div>
+</div>
+
+<script>
+async function loadDetail() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+
+    if (!id) {
+        document.getElementById("pTitle").textContent = "Error";
+        document.getElementById("pSongs").innerHTML = "<p>ID Playlist tidak valid.</p>";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/playlist/${id}`);
+        if (!response.ok) throw new Error("Gagal mengambil data playlist");
+
+        const playlist = await response.json();
+
+        const titleEl = document.getElementById("pTitle");
+        const countEl = document.getElementById("pCount");
+        const listEl = document.getElementById("pSongs");
+
+        if (titleEl) titleEl.textContent = playlist.title;
+        if (countEl) countEl.textContent = `${playlist.songs.length} Lagu`;
+
+        if (playlist.songs.length === 0) {
+            if (listEl) listEl.innerHTML = "<p>Playlist ini masih kosong.</p>";
+        } else {
+            let tracksHTML = "";
+            playlist.songs.forEach((song, index) => {
+                tracksHTML += `
+                <div class="track-row">
+                    <div class="track-number">${index + 1}</div>
+                    <div class="track-info">
+                        <strong>${song}</strong>
+                    </div>
+                    <button class="delete-btn" onclick="removeSong('${id}', '${song.replace(/'/g, "\\'")}')">
+                        Hapus
+                    </button>
+                </div>`;
+            });
+
+            if (listEl) listEl.innerHTML = tracksHTML;
+        }
+    } catch (err) {
+        console.error("Error loading playlist:", err);
+
+        const titleEl = document.getElementById("pTitle");
+        const listEl = document.getElementById("pSongs");
+
+        if (titleEl) titleEl.textContent = "Error";
+        if (listEl) listEl.innerHTML = "<p>Playlist tidak ditemukan.</p>";
+    }
+}
+
+async function removeSong(id, songName) {
+    if (!confirm(`Hapus ${songName} dari playlist?`)) return;
+
+    try {
+        const response = await fetch('/playlist/remove-song', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playlistId: id, song: songName })
+        });
+
+        if (response.ok) {
+            loadDetail();
+        } else {
+            alert("Gagal menghapus lagu.");
+        }
+    } catch (err) {
+        console.error("Error removing song:", err);
+        alert("Terjadi kesalahan saat menghapus lagu.");
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadDetail);
+</script>
+
+</body>
+</html>
