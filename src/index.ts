@@ -16,7 +16,7 @@ const fetchFn = async (...args: any[]) => {
 };
 
 const app = express();
-const PORT = 4000;
+const PORT = Number(process.env.PORT) || 4000;
 const API_KEY = process.env.LASTFM_API_KEY || "";
 
 app.use(express.json());
