@@ -10,10 +10,7 @@ const getQueryString = (param: any): string => {
   return param ? String(param) : "";
 };
 
-const fetchFn = async (...args: any[]) => {
-  const mod = await import('node-fetch');
-  return (mod.default as any)(...args);
-};
+
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -27,8 +24,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.get('/search', async (req: Request, res: Response) => {
   try {
     const artist = getQueryString(req.query.q);
-    const url = `http://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=${encodeURIComponent(artist)}&api_key=${API_KEY}&format=json`;
-    const response = await fetchFn(url);
+    const url = `https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=${encodeURIComponent(artist)}&api_key=${API_KEY}&format=json`;
+    const response = await fetch(url);
     const data = await response.json();
 
     if (!data.toptracks) {
@@ -51,8 +48,8 @@ app.get('/search', async (req: Request, res: Response) => {
 app.get('/albums', async (req: Request, res: Response) => {
   try {
     const artist = getQueryString(req.query.q);
-    const url = `http://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist=${encodeURIComponent(artist)}&api_key=${API_KEY}&format=json`;
-    const response = await fetchFn(url);
+    const url = `https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist=${encodeURIComponent(artist)}&api_key=${API_KEY}&format=json`;
+    const response = await fetch(url);
     const data = await response.json();
 
     if (!data.topalbums) {
@@ -76,8 +73,8 @@ app.get('/album-details', async (req: Request, res: Response) => {
   try {
     const artist = getQueryString(req.query.artist);
     const album = getQueryString(req.query.album);
-    const url = `http://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&api_key=${API_KEY}&format=json`;
-    const response = await fetchFn(url);
+    const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&api_key=${API_KEY}&format=json`;
+    const response = await fetch(url);
     const data = await response.json();
 
     if (!data.album) {
@@ -100,8 +97,8 @@ app.get('/album-details', async (req: Request, res: Response) => {
       tracks: tracks
     });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Failed" });
+    console.error(err);
+    res.status(500).json({ error: String(err) });
   }
 });
 
